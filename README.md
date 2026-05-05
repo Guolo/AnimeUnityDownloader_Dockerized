@@ -55,7 +55,7 @@ http://your_ip:5050/progress.json
 # Glance Dashboard Integration
 
 I have also created a custom Glance widget to monitor the overall download status and individual episode progress directly from your dashboard.
-Add your app's IP to your Glance .env file:
+Add your app's IP to your Glance ```.env``` file:
 ```
 ANIME_DOWNLOADER_IP=your_container_ip:port
 ```
