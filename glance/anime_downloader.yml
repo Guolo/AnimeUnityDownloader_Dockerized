@@ -1,0 +1,70 @@
+- type: custom-api
+  title: Anime Downloader
+  cache: 2s
+  subrequests:
+    progress:
+      url: http://${ANIME_DOWNLOADER_IP}/progress.json
+  template: |
+    {{ $progress := .Subrequest "progress" }}
+
+    {{ if eq $progress.Response.StatusCode 200 }}
+
+      {{ $animeName   := $progress.JSON.String "anime_name" }}
+      {{ $overallPct  := $progress.JSON.Float "overall.percentage" }}
+      {{ $completed   := $progress.JSON.Int "overall.completed" }}
+      {{ $total       := $progress.JSON.Int "overall.total" }}
+      {{ $episodes    := $progress.JSON.Array "episodes" }}
+
+      <div class="list" style="--list-gap: 12px;">
+
+        <!-- Anime name + overall percentage -->
+        <div>
+          <div class="color-highlight size-h4 text-truncate">{{ $animeName }}</div>
+          <div class="flex items-center" style="gap: 10px; margin-top: 6px;">
+            <div style="flex-grow: 1; background: rgba(128,128,128,0.2); border-radius: 5px; height: 6px; overflow: hidden;">
+              <div style="width: {{ printf "%.1f" $overallPct }}%; background-color: var(--color-positive); height: 100%; border-radius: 5px;"></div>
+            </div>
+            <div class="size-sm color-highlight" style="flex-shrink: 0; min-width: 60px; text-align: right;">
+              {{ printf "%.1f" $overallPct }}% ({{ $completed }}/{{ $total }})
+            </div>
+          </div>
+        </div>
+
+        <!-- Per-episode list (only episodes not yet done) -->
+        {{ $pending := 0 }}
+        {{ range $ep := $episodes }}
+          {{ if not ($ep.Bool "done") }}
+            {{ $pending = add $pending 1 }}
+          {{ end }}
+        {{ end }}
+
+        {{ if gt $pending 0 }}
+          <ul class="list collapsible-container" data-collapse-after="0" style="--list-gap: 10px;">
+            {{ range $ep := $episodes }}
+              {{ if not ($ep.Bool "done") }}
+                {{ $epPct := $ep.Float "percentage" }}
+                <li class="flex items-center" style="gap: 10px;">
+                  <div class="size-sm color-subdue" style="flex-shrink: 0; min-width: 90px;">
+                    {{ $ep.String "label" }}
+                  </div>
+                  <div style="flex-grow: 1; background: rgba(128,128,128,0.2); border-radius: 5px; height: 4px; overflow: hidden;">
+                    <div style="width: {{ printf "%.1f" $epPct }}%; background-color: var(--color-positive); height: 100%; border-radius: 5px;"></div>
+                  </div>
+                  <div class="size-sm color-paragraph" style="flex-shrink: 0; min-width: 42px; text-align: right;">
+                    {{ printf "%.1f" $epPct }}%
+                  </div>
+                </li>
+              {{ end }}
+            {{ end }}
+          </ul>
+        {{ else }}
+          <div class="color-positive size-sm">All episodes downloaded ✓</div>
+        {{ end }}
+
+      </div>
+
+    {{ else }}
+      <div class="color-negative size-sm text-center">
+        Could not reach progress.json — is the server running?
+      </div>
+    {{ end }}
