@@ -58,6 +58,8 @@ I have also created a custom Glance widget to monitor the overall download statu
 
 <img width="336" height="160" alt="Screenshot 2026-05-05 alle 17 27 07" src="https://github.com/user-attachments/assets/dc343d68-608d-4dff-b6e2-8406ab251839" />
 
+<br>
+
 
 Add your app's IP to your Glance ```.env``` file:
 ```
