@@ -23,13 +23,13 @@ Clone the repository:
 git clone https://github.com/Guolo/AnimeUnityDownloader_Dockerized.git
 cd AnimeUnityDownloader_Dockerized
 ```
-modify the ```.env``` file to set your local download paths:
+Modify the ```.env``` file to set your local download paths:
 ```
 nano .env
 ```
-example ```.env``` file:
+- example ```.env``` file:
 ```
-MOVIES_PATH=/path/to/your/movies
+MOVIES_PATH=/path/to/your/movies 
 SERIES_PATH=/path/to/your/tv_series
 ```
 
