@@ -13,7 +13,7 @@ I have extended the original project by:
 
 # Installation & Usage
 Prerequisites:  
-Docker and Docker Compose installed on your system.
+[Docker](https://www.docker.com) and [Docker Compose](https://docs.docker.com/compose/) installed on your system.
 
 Clone the repository:
 ```
