@@ -1,0 +1,16 @@
+services:
+  anime-downloader:
+    # Uncomment to build locally instead of using the prebuilt image
+    # build: .
+    image: alguolo/unity_downloader:stable
+    container_name: anime_unity_app
+    ports:
+      - "5050:5050"
+    volumes:
+      - ${FILM_PATH}:/app/Film/Downloads
+      - ${SERIES_PATH}:/app/SerieTV/Downloads
+      # Uncomment if you'd prefer the progress.json file to be written
+      # - ./frontend/progress.json:/app/frontend/progress.json
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

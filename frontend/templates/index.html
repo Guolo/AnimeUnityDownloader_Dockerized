@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anime Downloader</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f0; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2.5rem 1rem; color: #1a1a1a; }
+    .card { background: white; border: 1px solid #e5e5e0; border-radius: 14px; padding: 2rem; width: 100%; max-width: 520px; }
+    .title { font-size: 20px; font-weight: 600; margin-bottom: 1.75rem; display: flex; align-items: center; gap: 10px; }
+    .title-icon { background: #EEEDFE; border-radius: 8px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .field { margin-bottom: 1.25rem; }
+    label { display: block; font-size: 13px; font-weight: 500; color: #666; margin-bottom: 6px; }
+    input[type=text], input[type=number] { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.15s; }
+    input:focus { border-color: #7F77DD; box-shadow: 0 0 0 3px rgba(127,119,221,0.12); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .divider { display: flex; align-items: center; gap: 12px; color: #aaa; font-size: 12px; margin: 0.25rem 0 1.25rem; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #eee; }
+    .tipo-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tipo-btn { padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fafaf8; font-size: 13px; color: #555; text-align: center; cursor: pointer; transition: all 0.15s; }
+    .tipo-btn:hover { border-color: #aaa; color: #222; }
+    .tipo-btn.active { background: #EEEDFE; border-color: #AFA9EC; color: #3C3489; font-weight: 600; }
+    .submit-btn { width: 100%; padding: 11px; margin-top: 1.5rem; background: #534AB7; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+    .submit-btn:hover { background: #3C3489; }
+    .fade { opacity: 0.4; pointer-events: none; transition: opacity 0.2s; }
+    .success { background: #e6f9ee; color: #1a6b3a; border: 1px solid #a8dfbb; border-radius: 8px; padding: 12px 16px; font-size: 14px; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">
+      <div class="title-icon">▶</div>
+      Scarica anime
+    </div>
+
+    <form method="POST" id="dlForm" onsubmit="return validateForm()">
+
+      <div class="field">
+        <label for="anime_url">URL dell'anime</label>
+        <input type="text" id="anime_url" name="anime_url" placeholder="https://animeunity.to/anime/..." required>
+      </div>
+
+      <div id="range-section">
+        <div class="row">
+          <div class="field">
+            <label for="start">Episodio iniziale</label>
+            <input type="number" id="start" name="start" placeholder="1" min="1">
+          </div>
+          <div class="field">
+            <label for="end">Episodio finale</label>
+            <input type="number" id="end" name="end" placeholder="12" min="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="divider">oppure</div>
+
+      <div class="field" id="episodes-section">
+        <label for="episodes">Episodi specifici</label>
+        <input type="text" id="episodes" name="episodes" placeholder="es: 1, 5, 7">
+      </div>
+
+      <div class="field" style="margin-top: 1.5rem;">
+        <label>Tipo</label>
+        <div class="tipo-group">
+          <div class="tipo-btn active" data-value="serie" onclick="selectTipo(this)">Serie TV</div>
+          <div class="tipo-btn" data-value="film" onclick="selectTipo(this)">Film</div>
+        </div>
+        <input type="hidden" name="tipo" id="tipo" value="serie">
+      </div>
+
+      <button type="submit" class="submit-btn">Avvia download</button>
+    </form>
+
+    {% if message %}
+      <div class="success">{{ message }}</div>
+    {% endif %}
+  </div>
+
+  <script>
+    const startEl = document.getElementById('start');
+    const endEl = document.getElementById('end');
+    const episodesEl = document.getElementById('episodes');
+
+    function toggleFields() {
+      const hasEpisodes = episodesEl.value.trim() !== '';
+      const hasRange = startEl.value !== '' || endEl.value !== '';
+      document.getElementById('range-section').classList.toggle('fade', hasEpisodes);
+      document.getElementById('episodes-section').classList.toggle('fade', hasRange);
+    }
+
+    startEl.addEventListener('input', toggleFields);
+    endEl.addEventListener('input', toggleFields);
+    episodesEl.addEventListener('input', toggleFields);
+
+    function selectTipo(el) {
+      document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('tipo').value = el.dataset.value;
+    }
+
+    function validateForm() {
+      const episodes = episodesEl.value.trim();
+      const start = startEl.value;
+      const end = endEl.value;
+      if (episodes && (start || end)) {
+        alert('Usa "episodi specifici" oppure "inizio/fine", non entrambi.');
+        return false;
+      }
+      return true;
+    }
+  </script>
+</body>
+</html>
