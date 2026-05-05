@@ -17,7 +17,7 @@ Docker and Docker Compose installed on your system.
 
 Clone the repository:
 ```
-git clone https://github.com/
+git clone https://github.com/Guolo/AnimeUnity_Downloader_Dockerized.git
 cd AnimeUnityDownloader
 ```
 Modify .env file with your films and tv_series path:
