@@ -18,8 +18,8 @@ Prerequisites:
 
 Clone the repository:
 ```
-git clone https://github.com/Guolo/AnimeUnity_Downloader_Dockerized.git
-cd AnimeUnityDownloader
+git clone https://github.com/Guolo/AnimeUnityDownloader_Dockerized.git
+cd AnimeUnityDownloader_Dockerized
 ```
 modify the ```.env``` file to set your local download paths:
 ```
