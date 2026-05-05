@@ -41,4 +41,9 @@ Once the container is running, you can access the interface at:
 ```
 http://your_ip:5050
 ```
+# Monitoring Progress
 
+If you want to check the raw download data, the application exposes the progress file directly via HTTP. This is useful for debugging or verifying the real-time status:
+```
+http://localhost:5050/progress.json
+```
