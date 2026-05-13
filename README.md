@@ -41,7 +41,7 @@ nano .env
 ```
 - example ```.env``` file:
 ```
-MOVIES_PATH=/path/to/your/movies 
+FILM_PATH=/path/to/your/movies 
 SERIES_PATH=/path/to/your/tv_series
 ```
 
