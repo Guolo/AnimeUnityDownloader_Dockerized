@@ -49,6 +49,7 @@ Start your docker compose:
 ```
 docker compose up -d
 ```
+The image is built for multiple architectures — Docker will automatically pull the correct version for your system (amd64 or arm64).
 # Access the App
 
 Once the container is running, you can access the interface at:
