@@ -47,7 +47,7 @@ SERIES_PATH=/path/to/your/tv_series
 
 Start your docker compose:
 ```
-docker-compose up -d
+docker compose up -d
 ```
 # Access the App
 
