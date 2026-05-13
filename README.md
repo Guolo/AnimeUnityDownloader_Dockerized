@@ -20,12 +20,22 @@ I have extended the original project by:
 Prerequisites:  
 [Docker](https://www.docker.com) and [Docker Compose](https://docs.docker.com/compose/) installed on your system.
 
-Clone the repository:
+Create a ```docker-compose.yml``` file:
 ```
-git clone https://github.com/Guolo/AnimeUnityDownloader_Dockerized.git
-cd AnimeUnityDownloader_Dockerized
+services:
+  anime-downloader:
+    image: alguolo/unity_downloader:stable
+    container_name: anime_unity_app
+    ports:
+      - "5050:5050"
+    volumes:
+      - ${FILM_PATH}:/app/Film/Downloads
+      - ${SERIES_PATH}:/app/SerieTV/Downloads
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
 ```
-Modify the ```.env``` file to set your local download paths:
+Create a ```.env``` file to set your local download paths:
 ```
 nano .env
 ```
