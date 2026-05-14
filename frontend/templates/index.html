@@ -1,37 +1,253 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" data-theme="auto">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Anime Downloader</title>
   <style>
+    :root {
+      --bg-page: #f5f5f0;
+      --bg-card: #ffffff;
+      --bg-input: #ffffff;
+      --bg-tipo: #fafaf8;
+      --bg-tipo-active: #EEEDFE;
+      --border-card: #e5e5e0;
+      --border-input: #dddddd;
+      --border-tipo-active: #AFA9EC;
+      --color-text: #1a1a1a;
+      --color-label: #666666;
+      --color-tipo: #555555;
+      --color-tipo-active: #3C3489;
+      --color-btn: #534AB7;
+      --color-btn-hover: #3C3489;
+      --color-divider: #aaaaaa;
+      --color-divider-line: #eeeeee;
+      --color-title-icon-bg: #EEEDFE;
+      --color-success-bg: #e6f9ee;
+      --color-success-text: #1a6b3a;
+      --color-success-border: #a8dfbb;
+      --focus-shadow: rgba(127, 119, 221, 0.12);
+      --toggle-bg: #e0e0da;
+      --toggle-knob: #ffffff;
+      --toggle-track-active: #534AB7;
+      --toggle-icon-color: #888;
+    }
+
+    [data-theme="dark"] {
+      --bg-page: #111110;
+      --bg-card: #1e1e1c;
+      --bg-input: #2a2a28;
+      --bg-tipo: #252523;
+      --bg-tipo-active: #26215C;
+      --border-card: #333330;
+      --border-input: #3a3a38;
+      --border-tipo-active: #534AB7;
+      --color-text: #e8e8e4;
+      --color-label: #999994;
+      --color-tipo: #aaaaaa;
+      --color-tipo-active: #AFA9EC;
+      --color-btn: #26215C;
+      --color-btn-hover: #534AB7;
+      --color-divider: #555552;
+      --color-divider-line: #333330;
+      --color-title-icon-bg: #26215C;
+      --color-success-bg: #0a2e18;
+      --color-success-text: #5dd68a;
+      --color-success-border: #1a5c35;
+      --focus-shadow: rgba(127, 119, 221, 0.20);
+      --toggle-bg: #333330;
+      --toggle-knob: #e8e8e4;
+      --toggle-track-active: #7F77DD;
+      --toggle-icon-color: #999994;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #f5f5f0; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2.5rem 1rem; color: #1a1a1a; }
-    .card { background: white; border: 1px solid #e5e5e0; border-radius: 14px; padding: 2rem; width: 100%; max-width: 520px; }
-    .title { font-size: 20px; font-weight: 600; margin-bottom: 1.75rem; display: flex; align-items: center; gap: 10px; }
-    .title-icon { background: #EEEDFE; border-radius: 8px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg-page);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2.5rem 1rem;
+      color: var(--color-text);
+      transition: background 0.25s, color 0.25s;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 520px;
+      transition: background 0.25s, border-color 0.25s;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.75rem;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-icon {
+      background: var(--color-title-icon-bg);
+      border-radius: 8px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: background 0.25s;
+    }
+
+    /* ── Theme toggle ── */
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      user-select: none;
+    }
+
+    .theme-toggle-label {
+      font-size: 12px;
+      color: var(--color-label);
+      font-weight: 500;
+    }
+
+    /* Three-way segmented control: Auto | ☀ | ☾ */
+    .theme-seg {
+      display: flex;
+      background: var(--toggle-bg);
+      border-radius: 20px;
+      padding: 3px;
+      gap: 2px;
+      transition: background 0.25s;
+    }
+
+    .theme-seg button {
+      border: none;
+      background: transparent;
+      border-radius: 16px;
+      padding: 4px 9px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--toggle-icon-color);
+      transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+      line-height: 1;
+    }
+
+    .theme-seg button.active {
+      background: var(--bg-card);
+      color: var(--color-tipo-active);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.14);
+    }
+
     .field { margin-bottom: 1.25rem; }
-    label { display: block; font-size: 13px; font-weight: 500; color: #666; margin-bottom: 6px; }
-    input[type=text], input[type=number] { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.15s; }
-    input:focus { border-color: #7F77DD; box-shadow: 0 0 0 3px rgba(127,119,221,0.12); }
+    label { display: block; font-size: 13px; font-weight: 500; color: var(--color-label); margin-bottom: 6px; }
+
+    input[type=text], input[type=number] {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border-input);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s, background 0.25s, color 0.25s;
+      background: var(--bg-input);
+      color: var(--color-text);
+    }
+
+    input:focus { border-color: #7F77DD; box-shadow: 0 0 0 3px var(--focus-shadow); }
+    input::placeholder { color: var(--color-label); opacity: 0.7; }
+
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .divider { display: flex; align-items: center; gap: 12px; color: #aaa; font-size: 12px; margin: 0.25rem 0 1.25rem; }
-    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #eee; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--color-divider);
+      font-size: 12px;
+      margin: 0.25rem 0 1.25rem;
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--color-divider-line); }
+
     .tipo-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .tipo-btn { padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fafaf8; font-size: 13px; color: #555; text-align: center; cursor: pointer; transition: all 0.15s; }
-    .tipo-btn:hover { border-color: #aaa; color: #222; }
-    .tipo-btn.active { background: #EEEDFE; border-color: #AFA9EC; color: #3C3489; font-weight: 600; }
-    .submit-btn { width: 100%; padding: 11px; margin-top: 1.5rem; background: #534AB7; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
-    .submit-btn:hover { background: #3C3489; }
+
+    .tipo-btn {
+      padding: 10px;
+      border: 1px solid var(--border-input);
+      border-radius: 8px;
+      background: var(--bg-tipo);
+      font-size: 13px;
+      color: var(--color-tipo);
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tipo-btn:hover { border-color: var(--color-divider); color: var(--color-text); }
+    .tipo-btn.active {
+      background: var(--bg-tipo-active);
+      border-color: var(--border-tipo-active);
+      color: var(--color-tipo-active);
+      font-weight: 600;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 11px;
+      margin-top: 1.5rem;
+      background: var(--color-btn);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .submit-btn:hover { background: var(--color-btn-hover); }
+
     .fade { opacity: 0.4; pointer-events: none; transition: opacity 0.2s; }
-    .success { background: #e6f9ee; color: #1a6b3a; border: 1px solid #a8dfbb; border-radius: 8px; padding: 12px 16px; font-size: 14px; margin-top: 1rem; }
+
+    .success {
+      background: var(--color-success-bg);
+      color: var(--color-success-text);
+      border: 1px solid var(--color-success-border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 14px;
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="title">
-      <div class="title-icon">▶</div>
-      Scarica anime
+    <div class="title-row">
+      <div class="title">
+        <div class="title-icon">▶</div>
+        Scarica anime
+      </div>
+
+      <div class="theme-toggle" aria-label="Tema">
+        <div class="theme-seg" role="group" aria-label="Seleziona tema">
+          <button id="btn-auto"  onclick="setTheme('auto')"  title="Automatico" class="active">Auto</button>
+          <button id="btn-light" onclick="setTheme('light')" title="Chiaro">☀︎</button>
+          <button id="btn-dark"  onclick="setTheme('dark')"  title="Scuro">☾</button>
+        </div>
+      </div>
     </div>
 
     <form method="POST" id="dlForm" onsubmit="return validateForm()">
@@ -79,13 +295,51 @@
   </div>
 
   <script>
+    /* ── Theme logic ── */
+    const STORAGE_KEY = 'anime-dl-theme';
+    const html = document.documentElement;
+
+    function applyTheme(mode) {
+      if (mode === 'auto') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        html.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+      } else {
+        html.setAttribute('data-theme', mode);
+      }
+    }
+
+    function updateButtons(mode) {
+      ['auto', 'light', 'dark'].forEach(m => {
+        document.getElementById('btn-' + m).classList.toggle('active', m === mode);
+      });
+    }
+
+    function setTheme(mode) {
+      localStorage.setItem(STORAGE_KEY, mode);
+      applyTheme(mode);
+      updateButtons(mode);
+    }
+
+    // Init on load
+    (function () {
+      const saved = localStorage.getItem(STORAGE_KEY) || 'auto';
+      applyTheme(saved);
+      updateButtons(saved);
+
+      // Keep "auto" in sync if OS preference changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        if ((localStorage.getItem(STORAGE_KEY) || 'auto') === 'auto') applyTheme('auto');
+      });
+    })();
+
+    /* ── Form logic ── */
     const startEl = document.getElementById('start');
-    const endEl = document.getElementById('end');
+    const endEl   = document.getElementById('end');
     const episodesEl = document.getElementById('episodes');
 
     function toggleFields() {
       const hasEpisodes = episodesEl.value.trim() !== '';
-      const hasRange = startEl.value !== '' || endEl.value !== '';
+      const hasRange    = startEl.value !== '' || endEl.value !== '';
       document.getElementById('range-section').classList.toggle('fade', hasEpisodes);
       document.getElementById('episodes-section').classList.toggle('fade', hasRange);
     }
@@ -102,8 +356,8 @@
 
     function validateForm() {
       const episodes = episodesEl.value.trim();
-      const start = startEl.value;
-      const end = endEl.value;
+      const start    = startEl.value;
+      const end      = endEl.value;
       if (episodes && (start || end)) {
         alert('Usa "episodi specifici" oppure "inizio/fine", non entrambi.');
         return false;
