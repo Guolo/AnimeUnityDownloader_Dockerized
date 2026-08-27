@@ -1,7 +1,7 @@
 # Anime Unity Downloader (Dockerized Web UI)
 A full-stack, containerized application to download your favorite series from Anime Unity with ease.  This project takes the powerful core logic of the original downloader and wraps it into a simple web interface, making it accessible even to those who aren't comfortable with the command line.  
 
-<img width="540" height="569" alt="Screenshot 2026-05-14 alle 09 58 56" src="https://github.com/user-attachments/assets/6f4f5907-7a57-4a16-8664-5029d4034ac6" />
+<img width="551" height="574" alt="Screenshot 2026-08-27 alle 13 38 45" src="https://github.com/user-attachments/assets/c909d164-2526-44fa-8374-27aab809cacf" />
 
 > [!IMPORTANT]
 > This tool is for educational purposes only. Please respect the terms of service of the original platform and support the anime industry by using official streaming services whenever possible.
