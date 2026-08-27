@@ -44,15 +44,22 @@ def sanitize_directory_name(directory_name: str) -> str:
 
 
 def create_download_directory(
-    directory_name: str, custom_path: str | None = None,
+    directory_name: str, custom_path: str | None = None, subfolder: str | None = None,
 ) -> str:
-    """Create a directory for downloads if it doesn't exist."""
+    """Create a directory for downloads if it doesn't exist.
+
+    ``subfolder`` (if provided) is created *inside* the anime's own directory,
+    e.g. .../Downloads/Anime Name/S3, useful for organizing by season.
+    """
     sanitized_directory_name = sanitize_directory_name(directory_name)
     download_path = (
         Path(custom_path) / DOWNLOAD_FOLDER / sanitized_directory_name
         if custom_path is not None
         else Path(DOWNLOAD_FOLDER) / sanitized_directory_name
     )
+
+    if subfolder:
+        download_path = download_path / sanitize_directory_name(subfolder)
 
     try:
         Path(download_path).mkdir(parents=True, exist_ok=True)
