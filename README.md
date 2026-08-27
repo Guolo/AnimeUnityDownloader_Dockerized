@@ -35,6 +35,7 @@ services:
       - ${SERIES_PATH}:/app/SerieTV/Downloads
     environment:
       - PYTHONUNBUFFERED=1
+      - TZ=Europe/Rome
     restart: unless-stopped
 ```
 Create a ```.env``` file to set your local download paths:
