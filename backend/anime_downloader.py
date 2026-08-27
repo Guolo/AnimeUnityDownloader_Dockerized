@@ -12,7 +12,9 @@ Usage:
 from __future__ import annotations
 
 import asyncio
+import logging
 import random
+import sys
 import time
 from pathlib import Path
 
@@ -85,6 +87,7 @@ async def process_anime_download(
     end_episode: int | None = None,
     episodes: list[int] | None = None,
     custom_path: str | None = None,
+    subfolder: str | None = None,
 ) -> None:
     """Process the download of an anime from the specified URL."""
     soup = fetch_page_httpx(url)
@@ -95,8 +98,18 @@ async def process_anime_download(
         episodes=episodes,
     )
     anime_name = crawler.extract_anime_name(soup, url)
-    download_path = create_download_directory(anime_name, custom_path=custom_path)
+    download_path = create_download_directory(anime_name, custom_path=custom_path, subfolder=subfolder)
     video_urls = await crawler.collect_video_urls()
+
+    if not video_urls:
+        message = (
+            f"No matching episodes found for '{anime_name}' "
+            f"(requested episodes={episodes}, start={start_episode}, end={end_episode}). "
+            "The episode may not be available yet."
+        )
+        logging.error(message)
+        sys.exit(2)  # Exit code 2 = "nothing to download", distinto da un errore generico
+
     download_anime(anime_name, video_urls, download_path)
 
 
@@ -125,6 +138,7 @@ async def main() -> None:
         end_episode=args.end,
         episodes=episodes,
         custom_path=args.custom_path,
+        subfolder=args.subfolder,
     )
 
 
