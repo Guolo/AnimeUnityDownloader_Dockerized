@@ -117,6 +117,15 @@ def add_common_arguments(parser: ArgumentParser) -> None:
         help="The directory where the downloaded content will be saved.",
     )
     parser.add_argument(
+        "--subfolder",
+        type=str,
+        default=None,
+        help=(
+            "Optional subfolder created inside the anime's own directory "
+            "(e.g. a season number like S3)."
+        ),
+    )
+    parser.add_argument(
         "--version",
         action="version",
         version=get_version_string(),
