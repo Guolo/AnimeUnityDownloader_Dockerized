@@ -33,6 +33,7 @@ services:
     volumes:
       - ${FILM_PATH}:/app/Film/Downloads
       - ${SERIES_PATH}:/app/SerieTV/Downloads
+      - ./data:/app/data
     environment:
       - PYTHONUNBUFFERED=1
       - TZ=Europe/Rome
