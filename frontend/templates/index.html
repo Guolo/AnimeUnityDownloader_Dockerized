@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" data-theme="auto">
+<html lang="it" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,11 +26,14 @@
       --color-success-bg: #e6f9ee;
       --color-success-text: #1a6b3a;
       --color-success-border: #a8dfbb;
+      --color-danger: #c0392b;
+      --color-danger-hover: #922b21;
       --focus-shadow: rgba(127, 119, 221, 0.12);
       --toggle-bg: #e0e0da;
       --toggle-knob: #ffffff;
       --toggle-track-active: #534AB7;
       --toggle-icon-color: #888;
+      --overlay-bg: rgba(0,0,0,0.45);
     }
 
     [data-theme="dark"] {
@@ -54,11 +57,14 @@
       --color-success-bg: #0a2e18;
       --color-success-text: #5dd68a;
       --color-success-border: #1a5c35;
+      --color-danger: #e05a4a;
+      --color-danger-hover: #ff7a67;
       --focus-shadow: rgba(127, 119, 221, 0.20);
       --toggle-bg: #333330;
       --toggle-knob: #e8e8e4;
       --toggle-track-active: #7F77DD;
       --toggle-icon-color: #999994;
+      --overlay-bg: rgba(0,0,0,0.65);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -112,22 +118,8 @@
       transition: background 0.25s;
     }
 
-    /* ── Theme toggle ── */
-    .theme-toggle {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      user-select: none;
-    }
-
-    .theme-toggle-label {
-      font-size: 12px;
-      color: var(--color-label);
-      font-weight: 500;
-    }
-
-    /* Three-way segmented control: Auto | ☀ | ☾ */
-    .theme-seg {
+    /* ── Mode toggle: Singolo / Programmato (sostituisce il vecchio theme toggle) ── */
+    .mode-seg {
       display: flex;
       background: var(--toggle-bg);
       border-radius: 20px;
@@ -136,19 +128,20 @@
       transition: background 0.25s;
     }
 
-    .theme-seg button {
+    .mode-seg button {
       border: none;
       background: transparent;
       border-radius: 16px;
-      padding: 4px 9px;
+      padding: 6px 12px;
       font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
       color: var(--toggle-icon-color);
       transition: background 0.18s, color 0.18s, box-shadow 0.18s;
       line-height: 1;
     }
 
-    .theme-seg button.active {
+    .mode-seg button.active {
       background: var(--bg-card);
       color: var(--color-tipo-active);
       box-shadow: 0 1px 3px rgba(0,0,0,0.14);
@@ -157,7 +150,7 @@
     .field { margin-bottom: 1.25rem; }
     label { display: block; font-size: 13px; font-weight: 500; color: var(--color-label); margin-bottom: 6px; }
 
-    input[type=text], input[type=number] {
+    input[type=text], input[type=number], input[type=date], select {
       width: 100%;
       padding: 9px 12px;
       border: 1px solid var(--border-input);
@@ -167,9 +160,10 @@
       transition: border-color 0.15s, background 0.25s, color 0.25s;
       background: var(--bg-input);
       color: var(--color-text);
+      font-family: inherit;
     }
 
-    input:focus { border-color: #7F77DD; box-shadow: 0 0 0 3px var(--focus-shadow); }
+    input:focus, select:focus { border-color: #7F77DD; box-shadow: 0 0 0 3px var(--focus-shadow); }
     input::placeholder { color: var(--color-label); opacity: 0.7; }
 
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -221,6 +215,7 @@
     .submit-btn:hover { background: var(--color-btn-hover); }
 
     .fade { opacity: 0.4; pointer-events: none; transition: opacity 0.2s; }
+    .hidden { display: none !important; }
 
     .success {
       background: var(--color-success-bg);
@@ -231,6 +226,146 @@
       font-size: 14px;
       margin-top: 1rem;
     }
+
+    /* ── Scheduled view ── */
+    .scheduled-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .scheduled-header h2 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-label);
+    }
+
+    .add-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: none;
+      background: var(--color-btn);
+      color: #fff;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .add-btn:hover { background: var(--color-btn-hover); }
+
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--color-label);
+      font-size: 14px;
+    }
+
+    .schedule-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .schedule-item {
+      border: 1px solid var(--border-input);
+      background: var(--bg-tipo);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .schedule-info { min-width: 0; }
+    .schedule-url {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 320px;
+    }
+    .schedule-meta {
+      font-size: 12px;
+      color: var(--color-label);
+      margin-top: 3px;
+    }
+
+    .delete-btn {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border-input);
+      background: transparent;
+      color: var(--color-danger);
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .delete-btn:hover { background: var(--color-danger); color: #fff; border-color: var(--color-danger); }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--overlay-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 100;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      padding: 1.75rem;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+    }
+
+    .modal-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 1.5rem;
+    }
+
+    .btn-secondary {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-input);
+      background: transparent;
+      color: var(--color-text);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-secondary:hover { border-color: var(--color-divider); }
+
+    .btn-primary {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: var(--color-btn);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: var(--color-btn-hover); }
+
+    .hint { font-size: 11px; color: var(--color-label); margin-top: 5px; }
   </style>
 </head>
 <body>
@@ -241,98 +376,146 @@
         Scarica anime
       </div>
 
-      <div class="theme-toggle" aria-label="Tema">
-        <div class="theme-seg" role="group" aria-label="Seleziona tema">
-          <button id="btn-auto"  onclick="setTheme('auto')"  title="Automatico" class="active">Auto</button>
-          <button id="btn-light" onclick="setTheme('light')" title="Chiaro">☀︎</button>
-          <button id="btn-dark"  onclick="setTheme('dark')"  title="Scuro">☾</button>
-        </div>
+      <!-- Selettore modalità: Singolo / Programmato -->
+      <div class="mode-seg" role="group" aria-label="Modalità di download">
+        <button id="mode-single" class="active" onclick="setMode('single')">Singolo</button>
+        <button id="mode-scheduled" onclick="setMode('scheduled')">Programmato</button>
       </div>
     </div>
 
-    <form method="POST" id="dlForm" onsubmit="return validateForm()">
+    <!-- ══════════════ VISTA: SINGOLO ══════════════ -->
+    <div id="single-view">
+      <form method="POST" id="dlForm" onsubmit="return validateForm()">
 
-      <div class="field">
-        <label for="anime_url">URL dell'anime</label>
-        <input type="text" id="anime_url" name="anime_url" placeholder="https://animeunity.to/anime/..." required>
-      </div>
+        <div class="field">
+          <label for="anime_url">URL dell'anime</label>
+          <input type="text" id="anime_url" name="anime_url" placeholder="https://animeunity.to/anime/..." required>
+        </div>
 
-      <div id="range-section">
-        <div class="row">
-          <div class="field">
-            <label for="start">Episodio iniziale</label>
-            <input type="number" id="start" name="start" placeholder="1" min="1">
-          </div>
-          <div class="field">
-            <label for="end">Episodio finale</label>
-            <input type="number" id="end" name="end" placeholder="12" min="1">
+        <div id="range-section">
+          <div class="row">
+            <div class="field">
+              <label for="start">Episodio iniziale</label>
+              <input type="number" id="start" name="start" placeholder="1" min="1">
+            </div>
+            <div class="field">
+              <label for="end">Episodio finale</label>
+              <input type="number" id="end" name="end" placeholder="12" min="1">
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="divider">oppure</div>
+        <div class="divider">oppure</div>
 
-      <div class="field" id="episodes-section">
-        <label for="episodes">Episodi specifici</label>
-        <input type="text" id="episodes" name="episodes" placeholder="es: 1, 5, 7">
-      </div>
-
-      <div class="field" style="margin-top: 1.5rem;">
-        <label>Tipo</label>
-        <div class="tipo-group">
-          <div class="tipo-btn active" data-value="serie" onclick="selectTipo(this)">Serie TV</div>
-          <div class="tipo-btn" data-value="film" onclick="selectTipo(this)">Film</div>
+        <div class="field" id="episodes-section">
+          <label for="episodes">Episodi specifici</label>
+          <input type="text" id="episodes" name="episodes" placeholder="es: 1, 5, 7">
         </div>
-        <input type="hidden" name="tipo" id="tipo" value="serie">
+
+        <div class="field" style="margin-top: 1.5rem;">
+          <label>Tipo</label>
+          <div class="tipo-group">
+            <div class="tipo-btn active" data-value="serie" onclick="selectTipo(this)">Serie TV</div>
+            <div class="tipo-btn" data-value="film" onclick="selectTipo(this)">Film</div>
+          </div>
+          <input type="hidden" name="tipo" id="tipo" value="serie">
+        </div>
+
+        <button type="submit" class="submit-btn">Avvia download</button>
+      </form>
+
+      {% if message %}
+        <div class="success">{{ message }}</div>
+      {% endif %}
+    </div>
+
+    <!-- ══════════════ VISTA: PROGRAMMATO ══════════════ -->
+    <div id="scheduled-view" class="hidden">
+      <div class="scheduled-header">
+        <h2>Scaricamenti programmati</h2>
+        <button class="add-btn" onclick="openModal()" title="Aggiungi programmazione">+</button>
       </div>
 
-      <button type="submit" class="submit-btn">Avvia download</button>
-    </form>
+      <div id="empty-state" class="empty-state hidden">
+        Crea il tuo primo scaricamento programmato
+      </div>
 
-    {% if message %}
-      <div class="success">{{ message }}</div>
-    {% endif %}
+      <div id="schedule-list" class="schedule-list"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════ MODALE: NUOVA PROGRAMMAZIONE ══════════════ -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-title">Nuova programmazione</div>
+
+      <form id="scheduleForm" onsubmit="return submitSchedule(event)">
+        <div class="field">
+          <label for="sch_url">URL dell'anime</label>
+          <input type="text" id="sch_url" placeholder="https://animeunity.to/anime/..." required>
+        </div>
+
+        <div class="field">
+          <label for="sch_episode">Episodio da cui partire</label>
+          <input type="number" id="sch_episode" min="1" placeholder="1" required>
+        </div>
+
+        <div class="field">
+          <label for="sch_day">Giorno della settimana</label>
+          <select id="sch_day" required>
+            <option value="" disabled selected>Seleziona un giorno</option>
+            <option value="lunedi">Lunedì</option>
+            <option value="martedi">Martedì</option>
+            <option value="mercoledi">Mercoledì</option>
+            <option value="giovedi">Giovedì</option>
+            <option value="venerdi">Venerdì</option>
+            <option value="sabato">Sabato</option>
+            <option value="domenica">Domenica</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="sch_end">Data di fine (opzionale)</label>
+          <input type="date" id="sch_end">
+          <div class="hint">Se lasciata vuota, la programmazione resta attiva finché non la elimini.</div>
+        </div>
+
+        <div class="field">
+          <label for="sch_folder">Cartella (opzionale)</label>
+          <input type="text" id="sch_folder" placeholder="es: S1">
+          <div class="hint">Se lasciata vuota, viene usata la cartella di default.</div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeModal()">Annulla</button>
+          <button type="submit" class="btn-primary">Crea programmazione</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script>
-    /* ── Theme logic ── */
-    const STORAGE_KEY = 'anime-dl-theme';
+    /* ══════════════ Tema: solo automatico, nessun toggle manuale ══════════════ */
     const html = document.documentElement;
 
-    function applyTheme(mode) {
-      if (mode === 'auto') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        html.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-      } else {
-        html.setAttribute('data-theme', mode);
-      }
+    function applySystemTheme() {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      html.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
     }
 
-    function updateButtons(mode) {
-      ['auto', 'light', 'dark'].forEach(m => {
-        document.getElementById('btn-' + m).classList.toggle('active', m === mode);
-      });
+    applySystemTheme();
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySystemTheme);
+
+    /* ══════════════ Toggle Singolo / Programmato ══════════════ */
+    function setMode(mode) {
+      document.getElementById('mode-single').classList.toggle('active', mode === 'single');
+      document.getElementById('mode-scheduled').classList.toggle('active', mode === 'scheduled');
+      document.getElementById('single-view').classList.toggle('hidden', mode !== 'single');
+      document.getElementById('scheduled-view').classList.toggle('hidden', mode !== 'scheduled');
+      if (mode === 'scheduled') loadSchedules();
     }
 
-    function setTheme(mode) {
-      localStorage.setItem(STORAGE_KEY, mode);
-      applyTheme(mode);
-      updateButtons(mode);
-    }
-
-    // Init on load
-    (function () {
-      const saved = localStorage.getItem(STORAGE_KEY) || 'auto';
-      applyTheme(saved);
-      updateButtons(saved);
-
-      // Keep "auto" in sync if OS preference changes
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-        if ((localStorage.getItem(STORAGE_KEY) || 'auto') === 'auto') applyTheme('auto');
-      });
-    })();
-
-    /* ── Form logic ── */
+    /* ══════════════ Form "Singolo" (logica invariata) ══════════════ */
     const startEl = document.getElementById('start');
     const endEl   = document.getElementById('end');
     const episodesEl = document.getElementById('episodes');
@@ -363,6 +546,157 @@
         return false;
       }
       return true;
+    }
+
+    /* ══════════════ Gestione "Programmato" ══════════════ */
+    const DAY_LABELS = {
+      lunedi: 'Lunedì', martedi: 'Martedì', mercoledi: 'Mercoledì',
+      giovedi: 'Giovedì', venerdi: 'Venerdì', sabato: 'Sabato', domenica: 'Domenica'
+    };
+
+    let schedules = []; // popolato da loadSchedules() via API backend
+
+    // Recupera le programmazioni dal backend.
+    // Endpoint atteso: GET /api/schedules -> [{id, anime_url, start_episode, day_of_week, end_date}, ...]
+    async function loadSchedules() {
+      try {
+        const res = await fetch('/api/schedules');
+        if (res.ok) {
+          schedules = await res.json();
+        }
+      } catch (err) {
+        console.warn('Impossibile contattare /api/schedules, uso i dati locali.', err);
+      }
+      renderSchedules();
+    }
+
+    function renderSchedules() {
+      const list = document.getElementById('schedule-list');
+      const empty = document.getElementById('empty-state');
+
+      if (schedules.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      list.innerHTML = schedules.map(s => `
+        <div class="schedule-item" data-id="${s.id}">
+          <div class="schedule-info">
+            <div class="schedule-url" title="${escapeHtml(s.anime_url)}">${escapeHtml(parseAnimeTitle(s.anime_url))}</div>
+            <div class="schedule-meta">
+              ${DAY_LABELS[s.day_of_week] || s.day_of_week} · dall'episodio ${s.start_episode}
+              ${s.custom_folder ? ' · cartella ' + escapeHtml(s.custom_folder) : ''}
+              ${s.end_date ? ' · fino al ' + formatDate(s.end_date) : ' · nessuna scadenza'}
+              ${s.consecutive_failures > 0 ? ` · ⚠️ ${s.consecutive_failures}/4 tentativi falliti` : ''}
+            </div>
+          </div>
+          <button class="delete-btn" onclick="deleteSchedule('${s.id}')" title="Elimina">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Estrae un titolo leggibile dallo slug dell'URL.
+    // Es: https://www.animeunity.so/anime/7614-mushoku-tensei-jobless-reincarnation-3-ita/
+    //     -> "Mushoku Tensei Jobless Reincarnation 3 (ITA)"
+    // Nota: la punteggiatura originale (es. i due punti) non è presente nello slug
+    // e quindi non può essere ricostruita in modo affidabile.
+    function parseAnimeTitle(url) {
+      try {
+        const u = new URL(url);
+        const segments = u.pathname.split('/').filter(Boolean);
+        let slug = segments.find(s => /^\d+-/.test(s)) || segments[segments.length - 1] || '';
+
+        slug = slug.replace(/^\d+-/, ''); // rimuove l'id iniziale (es. "7614-")
+
+        let suffix = '';
+        if (/-ita$/i.test(slug)) {
+          suffix = ' (ITA)';
+          slug = slug.replace(/-ita$/i, '');
+        } else if (/-sub$/i.test(slug)) {
+          suffix = ' (SUB ITA)';
+          slug = slug.replace(/-sub$/i, '');
+        }
+
+        const words = slug.split('-').filter(Boolean).map(w =>
+          /^\d+$/.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)
+        );
+
+        return words.join(' ') + suffix;
+      } catch (err) {
+        return url; // fallback se l'URL non è valido
+      }
+    }
+
+    function formatDate(iso) {
+      const [y, m, d] = iso.split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    function openModal() {
+      document.getElementById('scheduleForm').reset();
+      document.getElementById('modal-overlay').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.add('hidden');
+    }
+
+    // Crea una nuova programmazione.
+    // Endpoint atteso: POST /api/schedules -> body JSON, risposta con l'oggetto creato (incluso id)
+    async function submitSchedule(event) {
+      event.preventDefault();
+
+      const payload = {
+        anime_url: document.getElementById('sch_url').value.trim(),
+        start_episode: parseInt(document.getElementById('sch_episode').value, 10),
+        day_of_week: document.getElementById('sch_day').value,
+        end_date: document.getElementById('sch_end').value || null,
+        custom_folder: document.getElementById('sch_folder').value.trim() || null
+      };
+
+      try {
+        const res = await fetch('/api/schedules', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const created = await res.json();
+          schedules.push(created);
+        } else {
+          // Fallback locale se il backend non è ancora collegato
+          schedules.push({ id: crypto.randomUUID(), ...payload });
+        }
+      } catch (err) {
+        schedules.push({ id: crypto.randomUUID(), ...payload });
+      }
+
+      renderSchedules();
+      closeModal();
+      return false;
+    }
+
+    // Elimina una programmazione.
+    // Endpoint atteso: DELETE /api/schedules/<id>
+    async function deleteSchedule(id) {
+      if (!confirm('Eliminare questa programmazione?')) return;
+
+      try {
+        await fetch(`/api/schedules/${id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.warn('Backend non raggiungibile, rimuovo solo lato client.', err);
+      }
+
+      schedules = schedules.filter(s => String(s.id) !== String(id));
+      renderSchedules();
     }
   </script>
 </body>
