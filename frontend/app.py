@@ -16,6 +16,27 @@ DB_PATH = os.environ.get("SCHEDULES_DB_PATH", "/app/data/schedules.db")
 
 ITALIAN_WEEKDAYS = ["lunedi", "martedi", "mercoledi", "giovedi", "venerdi", "sabato", "domenica"]
 
+# Orario a cui lo scheduler controlla le programmazioni giornaliere.
+# Configurabile via variabile d'ambiente SCHEDULER_TIME nel formato "HH:MM"
+# (es. SCHEDULER_TIME=06:00 nel file .env). Se assente o malformata, si usa 08:00.
+DEFAULT_SCHEDULER_TIME = "08:00"
+
+
+def get_scheduler_time():
+    """Legge e valida SCHEDULER_TIME dall'ambiente, restituendo (hour, minute)."""
+    raw = os.environ.get("SCHEDULER_TIME", DEFAULT_SCHEDULER_TIME).strip()
+
+    try:
+        hour_str, minute_str = raw.split(":")
+        hour, minute = int(hour_str), int(minute_str)
+        if not (0 <= hour <= 23 and 0 <= minute <= 59):
+            raise ValueError
+    except ValueError:
+        print(f"[scheduler] SCHEDULER_TIME='{raw}' non valido, uso il default {DEFAULT_SCHEDULER_TIME}.")
+        hour, minute = (int(x) for x in DEFAULT_SCHEDULER_TIME.split(":"))
+
+    return hour, minute
+
 
 # ══════════════════════════ DB ══════════════════════════
 
@@ -149,8 +170,12 @@ def check_and_run_scheduled_downloads():
         if row["end_date"]:
             end_date = datetime.strptime(row["end_date"], "%Y-%m-%d").date()
             if today > end_date:
-                db.execute("UPDATE scheduled_downloads SET active = 0 WHERE id = ?", (row["id"],))
+                db.execute("DELETE FROM scheduled_downloads WHERE id = ?", (row["id"],))
                 db.commit()
+                print(
+                    f"[scheduler] id={row['id']}: programmazione scaduta "
+                    f"(end_date={row['end_date']}), eliminata."
+                )
                 continue
 
         next_episode = row["last_downloaded_episode"] + 1 if row["last_downloaded_episode"] else row["start_episode"]
@@ -200,8 +225,11 @@ def check_and_run_scheduled_downloads():
 
 
 scheduler = BackgroundScheduler()
-# Ogni giorno alle 09:00 controlla se c'è qualche programmazione da avviare.
-scheduler.add_job(check_and_run_scheduled_downloads, "cron", hour=8, minute=0)
+# Ogni giorno, all'orario configurato (default 08:00, sovrascrivibile con
+# SCHEDULER_TIME nel .env), controlla se c'è qualche programmazione da avviare.
+_scheduler_hour, _scheduler_minute = get_scheduler_time()
+scheduler.add_job(check_and_run_scheduled_downloads, "cron", hour=_scheduler_hour, minute=_scheduler_minute)
+print(f"[scheduler] Job giornaliero impostato alle {_scheduler_hour:02d}:{_scheduler_minute:02d}.")
 
 
 # ══════════════════════════ Route esistenti ══════════════════════════
@@ -284,4 +312,4 @@ def delete_schedule(schedule_id):
 if __name__ == "__main__":
     init_db()
     scheduler.start()
-    app.run(debug=True, host="0.0.0.0", port=5050)
+    app.run(debug=False, host="0.0.0.0", port=5050)
