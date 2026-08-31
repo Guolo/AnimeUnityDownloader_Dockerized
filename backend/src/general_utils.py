@@ -1,15 +1,13 @@
-"""Utilities for fetching web pages, managing directories, and clearing the terminal.
+"""Utilities for fetching web pages and managing download directories.
 
-This module includes functions to handle common tasks such as sending HTTP requests,
-parsing HTML, creating download directories, and  clearing the terminal, making it
-reusable across projects.
+This module includes functions to handle common tasks such as sending HTTP requests
+and parsing HTML, making it reusable across the project.
 """
 
 from __future__ import annotations
 
 import gzip
 import logging
-import os
 import random
 import sys
 import time
@@ -202,15 +200,3 @@ def fetch_page_httpx(url: str, timeout: int = 10) -> BeautifulSoup:
             return fetch_page_cloudflare(url, timeout)
 
         raise
-
-
-def clear_terminal() -> None:
-    """Clear the terminal screen based on the operating system."""
-    commands = {
-        "nt": "cls",       # Windows
-        "posix": "clear",  # macOS and Linux
-    }
-
-    command = commands.get(os.name)
-    if command:
-        os.system(command)  # noqa: S605
