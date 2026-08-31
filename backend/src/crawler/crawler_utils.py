@@ -152,7 +152,15 @@ async def fetch_with_retries(
     params: dict | None = None,
     retries: int = 4,
 ) -> dict | None:
-    """Fetch data from a URL with retries on failure."""
+    """Fetch data from a URL with retries on failure.
+
+    Fixed vs. the original version: ``return`` was previously placed outside the
+    try/except but still inside the ``for`` loop, so the function always exited
+    after the very first attempt (success or failure) and the ``retries``
+    parameter had no real effect. It now only returns on an actual success (or a
+    successful cloudscraper fallback), and otherwise keeps retrying until the
+    attempts are exhausted.
+    """
 
     async def retry_or_fallback(
         attempt: int,
@@ -184,16 +192,28 @@ async def fetch_with_retries(
 
             except httpx.HTTPStatusError as https_err:
                 if https_err.response.status_code == HTTP_STATUS_FORBIDDEN:
-                    await retry_or_fallback(attempt, min_delay=1.0, max_delay=3.0)
+                    fallback_response = await retry_or_fallback(
+                        attempt, min_delay=1.0, max_delay=3.0,
+                    )
+                    if fallback_response is not None:
+                        return fallback_response
+                    continue
 
-                elif attempt < retries - 1:
+                if attempt < retries - 1:
                     delay = 2 ** attempt + random.uniform(1, 2)  # noqa: S311
                     await asyncio.sleep(delay)
+                    continue
+
+                return None
 
             except httpx.RequestError:
-                await retry_or_fallback(attempt)
+                fallback_response = await retry_or_fallback(attempt)
+                if fallback_response is not None:
+                    return fallback_response
+                continue
 
-            return response
+            else:
+                return response
 
     return None
 
