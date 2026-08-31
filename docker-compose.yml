@@ -8,7 +8,6 @@ services:
       - ${FILM_PATH}:/app/Film/Downloads
       - ${SERIES_PATH}:/app/SerieTV/Downloads
       - ./data:/app/data
-    environment:
-      - PYTHONUNBUFFERED=1
-      - TZ=Europe/Rome
+    env_file:
+      - .env
     restart: unless-stopped
