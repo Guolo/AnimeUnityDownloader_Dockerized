@@ -586,7 +586,7 @@
           <div class="schedule-info">
             <div class="schedule-url" title="${escapeHtml(s.anime_url)}">${escapeHtml(parseAnimeTitle(s.anime_url))}</div>
             <div class="schedule-meta">
-              ${DAY_LABELS[s.day_of_week] || s.day_of_week} · dall'episodio ${s.start_episode}
+              ${DAY_LABELS[s.day_of_week] || s.day_of_week} · ${s.last_downloaded_episode > 0 ? 'prossimo episodio: ' + (s.last_downloaded_episode + 1) : "dall'episodio " + s.start_episode}
               ${s.custom_folder ? ' · cartella ' + escapeHtml(s.custom_folder) : ''}
               ${s.end_date ? ' · fino al ' + formatDate(s.end_date) : ' · nessuna scadenza'}
               ${s.consecutive_failures > 0 ? ` · ⚠️ ${s.consecutive_failures}/4 tentativi falliti` : ''}
