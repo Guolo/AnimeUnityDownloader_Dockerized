@@ -8,13 +8,10 @@ from argparse import ArgumentParser, Namespace
 
 from fake_useragent import UserAgent
 
-from .version import get_version_string
-
 # ============================
 # Paths and Files
 # ============================
 DOWNLOAD_FOLDER = "Downloads"  # The folder where downloaded files will be stored.
-URLS_FILE = "URLs.txt"         # The file containing URLs to process.
 
 # ============================
 # Regex Patterns
@@ -26,7 +23,6 @@ ANIME_NAME_PATTERN = r"/anime/\d+-(.+)$"
 # ============================
 # Download Settings
 # ============================
-TASK_COLOR = "cyan"   # The color to be used for task-related messages.
 BATCH_SIZE = 120      # The maximum number of episodes the API allows per request.
 CRAWLER_WORKERS = 8   # The maximum number of worker threads for crawling tasks.
 DOWNLOAD_WORKERS = 2  # The maximum number of worker threads for downloading tasks.
@@ -124,12 +120,6 @@ def add_common_arguments(parser: ArgumentParser) -> None:
             "Optional subfolder created inside the anime's own directory "
             "(e.g. a season number like S3)."
         ),
-    )
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=get_version_string(),
-        help="Show program's version and exit.",
     )
 
 
