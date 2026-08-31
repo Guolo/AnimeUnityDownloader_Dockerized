@@ -34,9 +34,8 @@ services:
       - ${FILM_PATH}:/app/Film/Downloads
       - ${SERIES_PATH}:/app/SerieTV/Downloads
       - ./data:/app/data
-    environment:
-      - PYTHONUNBUFFERED=1
-      - TZ=Europe/Rome
+    env_file:
+      - .env
     restart: unless-stopped
 ```
 Create a ```.env``` file to set your local download paths:
@@ -47,6 +46,9 @@ nano .env
 ```
 FILM_PATH=/path/to/your/movies 
 SERIES_PATH=/path/to/your/tv_series
+PYTHONUNBUFFERED=1
+TZ=Europe/Rome
+SCHEDULER_TIME=05:00
 ```
 
 Start your docker compose:
