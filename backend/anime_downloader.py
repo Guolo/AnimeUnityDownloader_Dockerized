@@ -19,7 +19,6 @@ import time
 from pathlib import Path
 
 import requests
-from rich.live import Live
 
 from src.config import parse_arguments, prepare_headers
 from src.crawler.crawler import Crawler
@@ -30,8 +29,7 @@ from src.download_utils import (
     save_file_with_progress,
 )
 from src.file_utils import create_download_directory
-from src.general_utils import clear_terminal, fetch_page, fetch_page_httpx
-from src.progress_utils import create_progress_bar, create_progress_table
+from src.general_utils import fetch_page, fetch_page_httpx
 
 
 def download_episode(
@@ -73,12 +71,12 @@ def process_video_url(video_url: str, download_path: str, task_info: tuple) -> N
 
 
 def download_anime(anime_name: str, video_urls: list[str], download_path: str) -> None:
-    """Download episodes of a specified anime from provided video URLs."""
-    job_progress = create_progress_bar()
-    progress_table = create_progress_table(anime_name, job_progress)
+    """Download episodes of a specified anime from provided video URLs.
 
-    with Live(progress_table, refresh_per_second=10):
-        run_in_parallel(process_video_url, video_urls, job_progress, anime_name, download_path)
+    Progress is tracked internally and persisted to ``progress.json`` so the
+    web frontend can display it; there is no terminal UI.
+    """
+    run_in_parallel(process_video_url, video_urls, anime_name, download_path)
 
 
 async def process_anime_download(
@@ -129,7 +127,6 @@ def parse_episodes_list(episodes_raw: list[str] | None) -> list[int] | None:
 
 async def main() -> None:
     """Execute the script to download anime episodes from a given AnimeUnity URL."""
-    clear_terminal()
     args = parse_arguments()
     episodes = parse_episodes_list(args.episodes)
     await process_anime_download(
