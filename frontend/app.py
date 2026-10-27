@@ -3,6 +3,7 @@ import subprocess
 import shlex
 import os
 import sqlite3
+import threading
 from datetime import date, datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -85,6 +86,40 @@ def init_db():
     db.close()
 
 
+# ID delle programmazioni con un download in corso (scheduler giornaliero o "riprova"
+# manuale). Serve a evitare due download contemporanei dello stesso episodio e a
+# mostrare lo stato "in corso" nell'interfaccia.
+RUNNING_IDS = set()
+_running_lock = threading.Lock()
+
+
+def try_claim(schedule_id):
+    with _running_lock:
+        if schedule_id in RUNNING_IDS:
+            return False
+        RUNNING_IDS.add(schedule_id)
+        return True
+
+
+def release(schedule_id):
+    with _running_lock:
+        RUNNING_IDS.discard(schedule_id)
+
+
+def is_running(schedule_id):
+    with _running_lock:
+        return schedule_id in RUNNING_IDS
+
+
+def clean_folder(value):
+    """Normalizza il nome cartella: stringa vuota -> None, e scarta '.' / '..'
+    che farebbero uscire dalla cartella dell'anime."""
+    value = (value or "").strip()
+    if not value or value in (".", ".."):
+        return None
+    return value
+
+
 def row_to_dict(row):
     return {
         "id": row["id"],
@@ -95,6 +130,7 @@ def row_to_dict(row):
         "custom_folder": row["custom_folder"],
         "last_downloaded_episode": row["last_downloaded_episode"],
         "consecutive_failures": row["consecutive_failures"],
+        "running": is_running(row["id"]),
     }
 
 
@@ -153,6 +189,67 @@ def run_download_and_wait(anime_url, tipo, episodes, custom_folder=None):
 MAX_CONSECUTIVE_FAILURES = 4
 
 
+def attempt_schedule_download(db, row, count_failures=True):
+    """Tenta di scaricare il prossimo episodio di una programmazione.
+
+    count_failures=True  -> un fallimento incrementa il contatore e, al raggiungimento
+                            del limite, elimina la programmazione (scheduler giornaliero
+                            e "riprova" manuale).
+    count_failures=False -> un fallimento viene solo registrato nei log, senza toccare
+                            il contatore né eliminare nulla.
+    Restituisce True se l'episodio è stato scaricato.
+    """
+    next_episode = row["last_downloaded_episode"] + 1 if row["last_downloaded_episode"] else row["start_episode"]
+
+    print(f"[scheduler] Avvio download programmato: id={row['id']} url={row['anime_url']} episodio={next_episode} cartella={row['custom_folder']}")
+
+    try:
+        success, detail = run_download_and_wait(
+            row["anime_url"], "serie", episodes=next_episode, custom_folder=row["custom_folder"]
+        )
+        if success:
+            db.execute(
+                """
+                UPDATE scheduled_downloads
+                SET last_downloaded_episode = ?, consecutive_failures = 0
+                WHERE id = ?
+                """,
+                (next_episode, row["id"]),
+            )
+            db.commit()
+            print(f"[scheduler] id={row['id']}: episodio {next_episode} scaricato con successo.")
+            return True
+
+        if not count_failures:
+            print(f"[scheduler] id={row['id']}: riprova manuale, episodio {next_episode} NON scaricato ({detail}).")
+            return False
+
+        failures = row["consecutive_failures"] + 1
+
+        if failures >= MAX_CONSECUTIVE_FAILURES:
+            db.execute("DELETE FROM scheduled_downloads WHERE id = ?", (row["id"],))
+            db.commit()
+            print(
+                f"[scheduler] id={row['id']}: episodio {next_episode} non trovato per "
+                f"{failures} volte consecutive ({detail}). Programmazione eliminata "
+                "(probabile fine stagione)."
+            )
+        else:
+            db.execute(
+                "UPDATE scheduled_downloads SET consecutive_failures = ? WHERE id = ?",
+                (failures, row["id"]),
+            )
+            db.commit()
+            print(
+                f"[scheduler] id={row['id']}: episodio {next_episode} NON scaricato "
+                f"({detail}). Tentativo {failures}/{MAX_CONSECUTIVE_FAILURES}. Riproverò la prossima volta."
+            )
+    except Exception as e:
+        print(f"[scheduler] Errore avviando il download per id={row['id']}: {e}")
+
+    return False
+
+
 def check_and_run_scheduled_downloads():
     """Eseguita una volta al giorno: controlla schedules.db e avvia i download del giorno."""
     today_name = ITALIAN_WEEKDAYS[date.today().weekday()]
@@ -178,50 +275,32 @@ def check_and_run_scheduled_downloads():
                 )
                 continue
 
-        next_episode = row["last_downloaded_episode"] + 1 if row["last_downloaded_episode"] else row["start_episode"]
-
-        print(f"[scheduler] Avvio download programmato: id={row['id']} url={row['anime_url']} episodio={next_episode} cartella={row['custom_folder']}")
-
+        # Se c'è già un download in corso per questa programmazione (es. "riprova"
+        # lanciato a mano), non ne avvio un secondo.
+        if not try_claim(row["id"]):
+            print(f"[scheduler] id={row['id']}: download già in corso, salto.")
+            continue
         try:
-            success, detail = run_download_and_wait(
-                row["anime_url"], "serie", episodes=next_episode, custom_folder=row["custom_folder"]
-            )
-            if success:
-                db.execute(
-                    """
-                    UPDATE scheduled_downloads
-                    SET last_downloaded_episode = ?, consecutive_failures = 0
-                    WHERE id = ?
-                    """,
-                    (next_episode, row["id"]),
-                )
-                db.commit()
-                print(f"[scheduler] id={row['id']}: episodio {next_episode} scaricato con successo.")
-            else:
-                failures = row["consecutive_failures"] + 1
-
-                if failures >= MAX_CONSECUTIVE_FAILURES:
-                    db.execute("DELETE FROM scheduled_downloads WHERE id = ?", (row["id"],))
-                    db.commit()
-                    print(
-                        f"[scheduler] id={row['id']}: episodio {next_episode} non trovato per "
-                        f"{failures} volte consecutive ({detail}). Programmazione eliminata "
-                        "(probabile fine stagione)."
-                    )
-                else:
-                    db.execute(
-                        "UPDATE scheduled_downloads SET consecutive_failures = ? WHERE id = ?",
-                        (failures, row["id"]),
-                    )
-                    db.commit()
-                    print(
-                        f"[scheduler] id={row['id']}: episodio {next_episode} NON scaricato "
-                        f"({detail}). Tentativo {failures}/{MAX_CONSECUTIVE_FAILURES}. Riproverò la prossima volta."
-                    )
-        except Exception as e:
-            print(f"[scheduler] Errore avviando il download per id={row['id']}: {e}")
+            attempt_schedule_download(db, row, count_failures=True)
+        finally:
+            release(row["id"])
 
     db.close()
+
+
+def _retry_worker(schedule_id):
+    """Thread per il 'riprova' manuale: usa una connessione SQLite propria."""
+    db = sqlite3.connect(DB_PATH)
+    db.row_factory = sqlite3.Row
+    try:
+        row = db.execute(
+            "SELECT * FROM scheduled_downloads WHERE id = ? AND active = 1", (schedule_id,)
+        ).fetchone()
+        if row:
+            attempt_schedule_download(db, row, count_failures=True)
+    finally:
+        db.close()
+        release(schedule_id)
 
 
 scheduler = BackgroundScheduler()
@@ -242,6 +321,7 @@ def index():
         end = request.form.get("end", "").strip()
         episodes = request.form.get("episodes", "").strip()
         tipo = request.form.get("tipo")
+        custom_folder = clean_folder(request.form.get("custom_folder"))
 
         if not anime_url:
             return render_template("index.html", message="❌ Errore: URL mancante")
@@ -249,7 +329,11 @@ def index():
             return render_template("index.html", message="❌ Errore: usa episodes oppure start/end, non entrambi")
 
         try:
-            run_download(anime_url, tipo, start=start or None, end=end or None, episodes=episodes or None)
+            run_download(
+                anime_url, tipo,
+                start=start or None, end=end or None, episodes=episodes or None,
+                custom_folder=custom_folder,
+            )
         except Exception as e:
             return render_template("index.html", message=f"❌ Errore durante l'esecuzione: {e}")
 
@@ -291,7 +375,7 @@ def create_schedule():
         INSERT INTO scheduled_downloads (anime_url, start_episode, day_of_week, end_date, custom_folder)
         VALUES (?, ?, ?, ?, ?)
         """,
-        (data["anime_url"], data["start_episode"], data["day_of_week"], data.get("end_date"), data.get("custom_folder")),
+        (data["anime_url"], data["start_episode"], data["day_of_week"], data.get("end_date"), clean_folder(data.get("custom_folder"))),
     )
     db.commit()
 
@@ -299,6 +383,79 @@ def create_schedule():
         "SELECT * FROM scheduled_downloads WHERE id = ?", (cur.lastrowid,)
     ).fetchone()
     return jsonify(row_to_dict(new_row)), 201
+
+
+@app.route("/api/schedules/<int:schedule_id>", methods=["PUT"])
+def update_schedule(schedule_id):
+    data = request.get_json(silent=True)
+
+    required = ["anime_url", "start_episode", "day_of_week"]
+    if not data or not all(data.get(k) for k in required):
+        return jsonify({"error": "Campi obbligatori mancanti"}), 400
+
+    if data["day_of_week"] not in ITALIAN_WEEKDAYS:
+        return jsonify({"error": "Giorno della settimana non valido"}), 400
+
+    try:
+        new_episode = int(data["start_episode"])
+        if new_episode < 1:
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({"error": "Episodio non valido"}), 400
+
+    db = get_db()
+    row = db.execute("SELECT * FROM scheduled_downloads WHERE id = ?", (schedule_id,)).fetchone()
+    if row is None:
+        return jsonify({"error": "Programmazione non trovata"}), 404
+
+    if is_running(schedule_id):
+        return jsonify({"error": "Download in corso, riprova tra poco"}), 409
+
+    # Il form di modifica mostra come "episodio da cui partire" il PROSSIMO episodio.
+    # Se l'utente lo cambia (o cambia l'URL), il conteggio riparte da lì; altrimenti
+    # i progressi già fatti (last_downloaded_episode) vengono mantenuti.
+    current_next = row["last_downloaded_episode"] + 1 if row["last_downloaded_episode"] else row["start_episode"]
+    new_url = data["anime_url"].strip()
+    restart = new_url != row["anime_url"] or new_episode != current_next
+
+    db.execute(
+        """
+        UPDATE scheduled_downloads
+        SET anime_url = ?, start_episode = ?, day_of_week = ?, end_date = ?, custom_folder = ?,
+            last_downloaded_episode = ?, consecutive_failures = 0
+        WHERE id = ?
+        """,
+        (
+            new_url,
+            new_episode if restart else row["start_episode"],
+            data["day_of_week"],
+            data.get("end_date") or None,
+            clean_folder(data.get("custom_folder")),
+            0 if restart else row["last_downloaded_episode"],
+            schedule_id,
+        ),
+    )
+    db.commit()
+
+    updated = db.execute("SELECT * FROM scheduled_downloads WHERE id = ?", (schedule_id,)).fetchone()
+    return jsonify(row_to_dict(updated))
+
+
+@app.route("/api/schedules/<int:schedule_id>/retry", methods=["POST"])
+def retry_schedule(schedule_id):
+    """Ritenta subito il download del prossimo episodio, senza aspettare il giorno programmato."""
+    db = get_db()
+    row = db.execute(
+        "SELECT id FROM scheduled_downloads WHERE id = ? AND active = 1", (schedule_id,)
+    ).fetchone()
+    if row is None:
+        return jsonify({"error": "Programmazione non trovata"}), 404
+
+    if not try_claim(schedule_id):
+        return jsonify({"error": "Download già in corso"}), 409
+
+    threading.Thread(target=_retry_worker, args=(schedule_id,), daemon=True).start()
+    return jsonify({"status": "started"}), 202
 
 
 @app.route("/api/schedules/<int:schedule_id>", methods=["DELETE"])
